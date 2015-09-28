@@ -1,2 +1,0 @@
-[lab_infra]
-odin ansible_ssh_host=192.168.2.2 ansible_ssh_username=nrb
