@@ -1,0 +1,6 @@
+---
+lab_infra_home_net_ip: '192.168.2.2'
+lab_infra_home_net_cider: '24'
+
+lab_infra_lab_net_ip: '172.16.0.1'
+lab_infra_lab_net_cider: '24'
