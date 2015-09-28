@@ -1,0 +1,5 @@
+---
+
+- hosts: odin
+  roles:
+  - { role: install_apt_packages, apt_packages: "{{ all_apt_pkgs }}" }

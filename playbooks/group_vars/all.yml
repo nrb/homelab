@@ -1,4 +1,6 @@
 ---
 
 all_apt_pkgs:
-    - brctl
+    - bridge-utils
+    - git
+    - vim
