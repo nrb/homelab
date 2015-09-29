@@ -41,14 +41,48 @@ On the lab network, `odin` uses a Linux bridge to provide any containers it migh
 
 The bridge is named `br-lab`.
 
+## Defining the interfaces
+
+`/etc/network/interfaces` on `odin` contains the follwing:
+
+    # The loopback network interface
+    auto lo
+    iface lo inet loopback
+    
+    # Local network side, port nearest the power jack
+    auto p2p1
+    iface p2p1 inet static
+        address 192.168.2.2
+        netmask 255.255.255.0
+        gateway 192.168.2.1
+        dns-nameservers 192.168.2.1
+    
+    # The primary lab network interface
+    auto p3p1
+    #iface p3p1 inet static
+    #address 172.16.0.1
+    #netmask 255.255.255.0
+    #gateway 192.168.2.1
+    
+    iface br-lab inet static
+        bridge\_ports p3p1
+        bridge\_stp off
+        bridge\_waitport 0
+        bridge\_fd 0
+        address 172.16.0.1
+        netmask 255.255.255.0
+        broadcast 172.16.0.255
+        network 172.16.0.0
+        dns-nameservers 192.168.2.192
+
 ## Enable IP forwarding in the kernel
 
 In order to send traffic from the lab network, IPv4 forwarding needs to be enabled in the kernel.
 
 This is accomplished like so:
 
-`echo net.ipv4.ip_forward=1 >> /etc/sysctl.conf`
-`sysctl -p`
+    echo net.ipv4.ip_forward=1 >> /etc/sysctl.conf
+    sysctl -p
 
 This will let the kernel pass traffic from different interfaces and subnets between each other.
 
@@ -60,13 +94,14 @@ For now, I've done so wih the following iptables rules.
 
 This one enables NAT on the 'external" (to the lab, anyway) interface:
 
-    `iptables -t nat -A POSTROUTING -o p2p1 -j MASQUERADE`
+    iptables -t nat -A POSTROUTING --out-interface p2p1 --jump MASQUERADE
 
 Here, we tell the kernel that we should allow traffic from the lab's subnet on the `br-lab` interface to be forwarded:
 
-    `iptables -A FORWARD -s 172.16.0.0/24 -i br-lab -j ACCEPT`
+    iptables -A FORWARD --source 172.16.0.0/24 --in-interface br-lab --jump ACCEPT
 
 Note that these are NOT saved with these commands; they're merely added to the running system.
 
 This is not yet written out as I would like to ensure that the things `lxc` does to iptables to make its own `lxcbr0` bridge
-work is applied to `br-lab`.
+work is applied to `br-lab`. However, as entered, they will allow traffic to pass from the home subnet to the lab subnet, 
+and the lab subnet out to the internet.
