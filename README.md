@@ -37,4 +37,36 @@ There are 5 nodes that can be used for the actual lab itself. They are all HP G7
 
 `odin` is joined to both the home network (192.168.2.0/24) and the lab network (172.16.0.0/24).
 
-The IPs are mapped within the `lab_infra.yml` group\_vars.
+On the lab network, `odin` uses a Linux bridge to provide any containers it might host access to the hardware network.
+
+The bridge is named `br-lab`.
+
+## Enable IP forwarding in the kernel
+
+In order to send traffic from the lab network, IPv4 forwarding needs to be enabled in the kernel.
+
+This is accomplished like so:
+
+`echo net.ipv4.ip_forward=1 >> /etc/sysctl.conf`
+`sysctl -p`
+
+This will let the kernel pass traffic from different interfaces and subnets between each other.
+
+## Enable packet forwarding with iptables
+
+Next, the kernel needs to know exactly how to route packets between the two networks.
+
+For now, I've done so wih the following iptables rules.
+
+This one enables NAT on the 'external" (to the lab, anyway) interface:
+
+    `iptables -t nat -A POSTROUTING -o p2p1 -j MASQUERADE`
+
+Here, we tell the kernel that we should allow traffic from the lab's subnet on the `br-lab` interface to be forwarded:
+
+    `iptables -A FORWARD -s 172.16.0.0/24 -i br-lab -j ACCEPT`
+
+Note that these are NOT saved with these commands; they're merely added to the running system.
+
+This is not yet written out as I would like to ensure that the things `lxc` does to iptables to make its own `lxcbr0` bridge
+work is applied to `br-lab`.
